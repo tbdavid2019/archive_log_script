@@ -1,0 +1,33 @@
+#!/bin/bash
+# 若 log 檔案長這樣 xxx_2024-07-04_xxx-frontend.log  則適合用這個腳本
+
+# 設置日誌所在的目錄
+LOG_DIR="/path/to/log/directory"
+
+# 獲取當前年份和月份
+CURRENT_YEAR=$(date +"%Y")
+CURRENT_MONTH=$(date +"%m")
+
+# 創建歸檔目錄（如果不存在）
+ARCHIVE_DIR="${LOG_DIR}/archive/${CURRENT_YEAR}/${CURRENT_MONTH}"
+mkdir -p "$ARCHIVE_DIR"
+
+# 移動上個月的日誌文件到歸檔目錄
+find "$LOG_DIR" -maxdepth 1 -type f \( -name "*.txt" -o -name "*.csv" \) | while read -r file; do
+# 獲取文件的年份和月份
+FILE_DATE=$(echo "$file" | grep -oP '\d{4}-\d{2}-\d{2}' | head -1)
+if [ -n "$FILE_DATE" ]; then
+FILE_YEAR=${FILE_DATE:0:4}
+FILE_MONTH=${FILE_DATE:5:2}
+
+# 如果文件不是當前月份的，則移動到相應的歸檔目錄
+if [ "$FILE_YEAR$FILE_MONTH" != "${CURRENT_YEAR}${CURRENT_MONTH}" ]; then
+TARGET_DIR="${LOG_DIR}/archive/${FILE_YEAR}/${FILE_MONTH}"
+mkdir -p "$TARGET_DIR"
+mv "$file" "$TARGET_DIR/"
+echo "Moved $file to $TARGET_DIR/"
+fi
+fi
+done
+
+echo "Archive process completed."
